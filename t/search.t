@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use Mojo::UserAgent;
 use Test::More 'no_plan';
 use_ok 'SolarBeam';
 
@@ -56,6 +57,19 @@ sub get {
   ok($expect);
   my ($path, %query) = @{$expect};
   is($url->path, $path);
-  is_deeply($url->query->to_hash, \%query);
+  is_deeply( $url->query->to_hash, \%query);
 }
 
+sub post {
+  my $self = shift;
+  # Re-implement post from Mojo::UserAgent without callback support though
+  my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+  my $tx = Mojo::UserAgent->new->build_tx('POST', @_);
+  my $expect = delete $self->{expect};
+
+  ok($expect);
+  my ($path, %query) = @{$expect};
+
+  is($tx->req->url->path, $path);
+  is_deeply($tx->req->params->to_hash, \%query);
+}
