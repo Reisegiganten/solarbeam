@@ -2,7 +2,8 @@ package SolarBeam::Response;
 
 use Mojo::Base -base;
 use Data::Page;
-use Mojo::JSON::Any;
+use Mojo::JSON::MaybeXS;
+use Mojo::JSON qw/decode_json/;
 
 has 'status';
 has 'error' => 'Unknown error';
@@ -31,7 +32,7 @@ sub parse {
     return $self;
   }
 
-  my $data = Mojo::JSON::Any->new->decode($msg->body);
+  my $data = decode_json($msg->body);
 
   my $header = $data->{responseHeader};
   my $res = $data->{response};
