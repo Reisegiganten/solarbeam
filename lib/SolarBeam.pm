@@ -1,5 +1,21 @@
 package SolarBeam;
 
+=head1 NAME
+
+RG::Engine::Solr
+
+=head1 DESCRIPTION
+
+Interface to acquire Solr index engine connections.
+
+=head1 EXAMPLE
+
+use RG::Engine::Solr;
+
+my $solr = RG::Engine::Solr->new( 'charter' );
+
+=cut
+
 use Mojo::Base -base;
 use Mojo::UserAgent;
 use Mojo::Parameters;
@@ -7,13 +23,46 @@ use Mojo::URL;
 use SolarBeam::Response;
 use SolarBeam::Query;
 
+=head1 ATTRIBUTES
+
+L<SolarBeam> implements the the following attributes.
+
+=head2 url
+
+Solr endpoint as a string.
+
+=head2 mojo_url
+
+Solr endpoint as a Mojo::URL object. Defaults to inflating from the 'url' attribute.
+
+=head2 user_agent
+
+A Mojo::UserAgent compatible object.
+
+=head2 default_query
+
+A hashref with default parameters used for every query.
+
+=cut
+
 has 'url';
-has 'mojo_url' => sub { Mojo::URL->new(shift->url) };
-has 'user_agent' => sub { Mojo::UserAgent->new };
+has 'mojo_url'      => sub { Mojo::URL->new(shift->url) };
+has 'user_agent'    => sub { Mojo::UserAgent->new };
 has 'default_query' => sub { {} };
 
-my $escape_all   = quotemeta( '+-&|!(){}[]^"~*?:\\' );
-my $escape_wilds = quotemeta( '+-&|!(){}[]^~:\\' );
+my $escape_all   = quotemeta( '+-&|!(){}[]^~:\\"*?' );
+my $escape_wilds = quotemeta( '+-&|!(){}[]^~:\\'    );
+
+=head1 METHODS
+
+=head2 search($query, [%options], $cb)
+
+options:
+
+    page
+    rows
+
+=cut
 
 sub search {
   my $callback = pop;
@@ -43,6 +92,16 @@ sub search {
   });
 }
 
+=head2 autocomplete($prefix, [%options], $cb)
+
+options:
+
+   -postfix   - defaults to \w+
+   regex.flag -
+   regex      -
+
+=cut
+
 sub autocomplete {
   my $callback = pop;
   my ($self, $prefix, %options) = @_;
@@ -59,6 +118,18 @@ sub autocomplete {
     $callback->(shift, $res);
   });
 }
+
+=head2 build_url($options)
+
+options:
+
+    -endpoint - default 'select'
+    -query    -
+    fq        -
+    facet     -
+    terms     -
+
+=cut
 
 sub build_url {
   my ($self, $options) = @_;
@@ -93,12 +164,20 @@ sub build_url {
   return $url;
 }
 
+=head2 handle_page($page, $options)
+
+=cut
+
 sub handle_page {
   my ($self, $page, $options) = @_;
   die "You must provide both page and rows" unless $options->{rows};
   $options->{start} = ($page - 1) * $options->{rows};
-  delete $options->{page};
+  return delete $options->{page};
 }
+
+=head2 handle_fq($fq, $options)
+
+=cut
 
 sub handle_fq {
   my ($self, $fq, $options) = @_;
@@ -109,12 +188,23 @@ sub handle_fq {
   } else {
     $options->{fq} = $self->build_query($fq);
   }
+  return
 }
+
+
+=head2 handle_facet($fact, $options)
+
+=cut
 
 sub handle_facet {
   my ($self, $facet, $options) = @_;
   $self->handle_nested_hash('facet', $facet, $options);
 }
+
+
+=head2 handle_nested_hash($prefix, $content, $options)
+
+=cut
 
 sub handle_nested_hash {
   my ($self, $prefix, $content, $options) = @_;
@@ -133,6 +223,11 @@ sub handle_nested_hash {
   }
 }
 
+
+=head2 build_query($query)
+
+=cut
+
 sub build_query {
   my ($self, $query) = @_;
 
@@ -150,6 +245,11 @@ sub build_query {
   }
 }
 
+
+=head2 build_hash(%fields)
+
+=cut
+
 sub build_hash {
   my ($self, %fields) = @_;
   my @query;
@@ -162,6 +262,12 @@ sub build_hash {
 
   '(' . join(' AND ', @query) . ')';
 }
+
+=head1 CLASS METHODS
+
+=head2 escape($text);
+
+=cut
 
 sub escape {
   my $text = pop;
