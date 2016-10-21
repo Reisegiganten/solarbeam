@@ -4,16 +4,14 @@ use Mojo::Base -base;
 use Mojo::UserAgent;
 use Mojo::Parameters;
 use Mojo::URL;
-use SolarBeam::Response;
 use SolarBeam::Query;
+use SolarBeam::Response;
+use SolarBeam::Util 'escape';
 
 has url           => sub { Carp::Confess('url is required') };
 has mojo_url      => sub { Mojo::URL->new(shift->url) };
 has user_agent    => sub { Mojo::UserAgent->new };
 has default_query => sub { {} };
-
-my $escape_all   = quotemeta('+-&|!(){}[]^~:\\"*?');
-my $escape_wilds = quotemeta('+-&|!(){}[]^~:\\');
 
 sub search {
   my $callback = pop;
@@ -155,9 +153,9 @@ sub build_query {
   }
   elsif ($type eq 'ARRAY') {
     my ($raw, @params) = @$query;
-    $raw =~ s|%@|$self->escape(shift @params)|ge;
+    $raw =~ s|%@|escape(shift @params)|ge;
     my %params = @params;
-    $raw =~ s|%([a-z]+)|$self->escape($params{$1})|ge;
+    $raw =~ s|%([a-z]+)|escape($params{$1})|ge;
     $raw;
   }
   else {
@@ -173,26 +171,10 @@ sub build_hash {
   for my $field (keys %fields) {
     my $val = $fields{$field};
     my @vals = ref($val) eq 'ARRAY' ? @{$val} : $val;
-    push @query, join(' OR ', map { $field . ':(' . $self->escape($_) . ')' } @vals);
+    push @query, join(' OR ', map { $field . ':(' . escape($_) . ')' } @vals);
   }
 
   '(' . join(' AND ', @query) . ')';
-}
-
-sub escape {
-  my $text = pop;
-  my $chars;
-
-  if (ref($text)) {
-    $text  = ${$text};
-    $chars = $escape_all;
-  }
-  else {
-    $chars = $escape_wilds;
-  }
-
-  $text =~ s{([$chars])}{\\$1}g;
-  return $text;
 }
 
 1;
@@ -271,9 +253,5 @@ options:
 =head2 build_query($query)
 
 =head2 build_hash(%fields)
-
-=head1 CLASS METHODS
-
-=head2 escape($text);
 
 =cut

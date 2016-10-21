@@ -1,8 +1,8 @@
 package SolarBeam::Query;
 use Mojo::Base -base;
-use overload q("") => 'stringify';
 
-my $escape_chars = quotemeta('+-&|!(){}[]^"~*?:\\');
+use SolarBeam::Util qw(escape_chars unescape_chars);
+use overload q("") => 'stringify';
 
 #has 'query' => ( is => 'ro', isa => 'ArrayRef', default => sub { [] } );
 has query => sub { [] };
@@ -136,13 +136,7 @@ sub _dispatch_value {
 
 sub _value_SCALAR {
   my ($self, $k, $v) = @_;
-
-  if (ref $v) {
-    $v = $$v;
-  }
-  else {
-    $v = '"' . $self->escape($v) . '"';
-  }
+  $v = ref $v ? $$v : sprintf '"%s"', escape_chars $v;
 
   my $r = qq($k:$v);
   $r =~ s{^:}{};
@@ -205,46 +199,29 @@ sub _op_range_exc {
 sub _op_boost {
   my ($self, $k) = (shift, shift);
   my ($v, $boost) = @{shift()};
-  $v = $self->escape($v);
-  return qq($k:"$v"^$boost);
+  return sprintf '%s:%s^%s', $k, escape_chars($v), $boost;
 }
 
 sub _op_fuzzy {
   my ($self, $k) = (shift, shift);
   my ($v, $distance) = @{shift()};
-  $v = $self->escape($v);
-  return qq($k:$v~$distance);
+  return sprintf '%s:%s~%s', $k, escape_chars($v), $distance;
 }
 
 sub _op_proximity {
   my ($self, $k) = (shift, shift);
   my ($v, $distance) = @{shift()};
-  $v = $self->escape($v);
-  return qq($k:"$v"~$distance);
+  return sprintf '%s:"%s"~%s', $k, escape_chars($v), $distance;
 }
 
 sub _op_require {
   my ($self, $k, $v) = @_;
-  $v = $self->escape($v);
-  return qq(+$k:"$v");
+  return sprintf '+%s:"%s"', $k, escape_chars($v);
 }
 
 sub _op_prohibit {
   my ($self, $k, $v) = @_;
-  $v = $self->escape($v);
-  return qq(-$k:"$v");
-}
-
-sub escape {
-  my ($self, $text) = @_;
-  $text =~ s{([$escape_chars])}{\\$1}g;
-  return $text;
-}
-
-sub unescape {
-  my ($self, $text) = @_;
-  $text =~ s{\\([$escape_chars])}{$1}g;
-  return $text;
+  return sprintf '-%s:"%s"', $k, escape_chars($v);
 }
 
 sub ___log {
@@ -283,7 +260,7 @@ queries to be sent to Solr. Syntax wise, it attempts to be as close to
 L<SQL::Abstract> WHERE clauses as possible, with obvious exceptions for 
 idioms that do not exist in SQL. Just as values in SQL::Abstract are 
 SQL-escaped, this module does the appropriate Solr-escaping on all values 
-passed to the object (see C<escape()>).
+passed to the object (see C<SolarBeam::Util/escape_chars>).
 
 =head1 QUERY SYNTAX
 
@@ -396,18 +373,6 @@ Creates a new query object with the given hashref.
 =head2 stringify( )
 
 Converts the supplied structure into a Solr/Lucene query.
-
-=head2 escape( $value )
-
-The following values must be escaped in a search value:
-
-    + - & | ! ( ) { } [ ] ^ " ~ * ? : \
-
-B<NB:> Values sent to C<new()> are automatically escaped for you.
-
-=head2 unescape( $value )
-
-Unescapes values escaped in C<escape()>.
 
 =head2 D
 
