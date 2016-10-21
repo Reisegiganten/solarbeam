@@ -8,6 +8,8 @@ use SolarBeam::Query;
 use SolarBeam::Response;
 use SolarBeam::Util 'escape';
 
+our $VERSION = '0.01';
+
 has url           => sub { Carp::Confess('url is required') };
 has ua            => sub { Mojo::UserAgent->new };
 has default_query => sub { {} };
@@ -191,7 +193,11 @@ sub _handle_page {
 
 =head1 NAME
 
-SolarBeam - 
+SolarBeam - Async Solr search driver
+
+=head1 VERSION
+
+0.01
 
 =head1 SYNOPSIS
 
