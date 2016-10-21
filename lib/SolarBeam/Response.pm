@@ -1,5 +1,4 @@
 package SolarBeam::Response;
-
 use Mojo::Base -base;
 use Data::Page;
 use Mojo::JSON::MaybeXS;
@@ -15,9 +14,9 @@ has 'start';
 has 'docs' => sub { [] };
 
 has 'facet_queries' => sub { {} };
-has 'facet_fields' => sub { {} };
-has 'facet_dates' => sub { {} };
-has 'facet_ranges' => sub { {} };
+has 'facet_fields'  => sub { {} };
+has 'facet_dates'   => sub { {} };
+has 'facet_ranges'  => sub { {} };
 
 has 'terms';
 
@@ -35,9 +34,9 @@ sub parse {
   my $data = decode_json($msg->body);
 
   my $header = $data->{responseHeader};
-  my $res = $data->{response};
+  my $res    = $data->{response};
   my $facets = $data->{facet_counts};
-  my $terms = $data->{terms};
+  my $terms  = $data->{terms};
   my $field;
 
   if (!$header) {
@@ -47,8 +46,9 @@ sub parse {
 
     if ($title) {
       $self->error($title->text);
-    } else {
-      $self->error($msg->code .': '. $msg->body);
+    }
+    else {
+      $self->error($msg->code . ': ' . $msg->body);
     }
     return $self;
   }
@@ -86,7 +86,7 @@ sub parse {
     }
     $self->terms($sane_terms);
   }
-  
+
   if ($self->ok && $res) {
     $self->pager->total_entries($self->numFound);
   }
@@ -103,10 +103,47 @@ sub build_count_list {
   my ($self, $list) = @_;
   my @result = ();
   for (my $i = 1; $i < @$list; $i += 2) {
-    push @result, { value => $list->[$i-1], count => $list->[$i] }
+    push @result, {value => $list->[$i - 1], count => $list->[$i]};
   }
   return \@result;
 }
 
 1;
 
+=encoding utf8
+
+=head1 NAME
+
+SolarBeam::Response - TODO
+
+=head1 SYNOPSIS
+
+TODO
+
+=head1 DESCRIPTION
+
+TODO
+
+=head1 ATTRIBUTES
+
+=head1 METHODS
+
+=head2 build_count_list
+
+=head2 ok
+
+=head2 parse
+
+=head1 AUTHOR
+
+Jan Henning Thorsen
+
+=head1 COPYRIGHT AND LICENSE
+
+TODO
+
+=head1 SEE ALSO
+
+TODO
+
+=cut
