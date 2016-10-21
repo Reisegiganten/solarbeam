@@ -195,8 +195,6 @@ sub escape {
   return $text;
 }
 
-"It's super effective!";
-
 1;
 
 =encoding utf8
