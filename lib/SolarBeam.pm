@@ -13,6 +13,27 @@ our $VERSION = '0.01';
 has ua            => sub { Mojo::UserAgent->new };
 has default_query => sub { {} };
 
+sub autocomplete {
+  my $cb = pop;
+  my ($self, $prefix, %options) = @_;
+  my $postfix = delete $options{'-postfix'} || '\w+';
+
+  $options{'regex.flag'} = 'case_insensitive';
+  $options{'regex'}      = quotemeta($prefix) . $postfix;
+  my $options = {terms => \%options, -endpoint => 'terms'};
+  my $url = $self->_build_url($options);
+
+  Mojo::IOLoop->delay(
+    sub { $self->ua->get($url, shift->begin) },
+    sub {
+      my ($delay, $tx) = @_;
+      $self->$cb(SolarBeam::Response->new->parse($tx->res));
+    }
+  );
+
+  return $self;
+}
+
 sub new {
   my $self = shift->SUPER::new(@_);
   $self->url($self->{url}) if $self->{url};
@@ -24,27 +45,22 @@ sub search {
   my ($self, $query, %options) = @_;
   my $options = \%options;
   my $page    = $options->{page};
-  $options->{-query} = $query;
 
+  $options->{-query} = $query;
   my $url = $self->_build_url($options);
 
   my $q = $url->query;
   $url->query(Mojo::Parameters->new);
 
-  $self->ua->post(
-    $url,
-    {'Content-Type' => 'application/x-www-form-urlencoded'} => $q,
+  Mojo::IOLoop->delay(
+    sub { $self->ua->post($url, form => $q, shift->begin) },
     sub {
-      my ($ua, $tx) = @_;
+      my ($delay, $tx) = @_;
       my $res = SolarBeam::Response->new->parse($tx->res);
 
       if ($page && $res->ok) {
         $res->pager->current_page($page);
         $res->pager->entries_per_page($options->{rows});
-      }
-
-      if (!$res->ok) {
-        warn "Solr failed: $url\n" . $res->error;
       }
 
       $self->$cb($res);
@@ -58,28 +74,6 @@ sub url {
   my $self = shift;
   return $self->{url} ||= Mojo::URL->new('http://localhost:8983/solr') unless @_;
   $self->{url} = Mojo::URL->new(shift);
-  return $self;
-}
-
-sub autocomplete {
-  my $cb = pop;
-  my ($self, $prefix, %options) = @_;
-  my $postfix = delete $options{'-postfix'} || '\w+';
-
-  $options{'regex.flag'} = 'case_insensitive';
-  $options{'regex'}      = quotemeta($prefix) . $postfix;
-  my $options = {terms => \%options, -endpoint => 'terms'};
-
-  my $url = $self->_build_url($options);
-
-  $self->ua->get(
-    $url,
-    sub {
-      my ($ua, $tx) = @_;
-      $self->$cb(SolarBeam::Response->new->parse($tx->res));
-    }
-  );
-
   return $self;
 }
 
