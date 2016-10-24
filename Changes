@@ -1,5 +1,8 @@
 Revision history for perl distribution Convos
 
+0.02 Not Released
+ - url() is a method that coerce string into Mojo::URL
+
 0.01 2016-10-21T12:46:14+0200
  - Initial EXPERIMENTAL release
 

@@ -10,15 +10,12 @@ use SolarBeam::Util 'escape';
 
 our $VERSION = '0.01';
 
-has url           => sub { Carp::Confess('url is required') };
 has ua            => sub { Mojo::UserAgent->new };
 has default_query => sub { {} };
 
 sub new {
   my $self = shift->SUPER::new(@_);
-
-  $self->{url} ||= 'http://localhost:8983/solr';
-  $self->{url} = Mojo::URL->new($self->{url}) unless ref $self->{url};
+  $self->url($self->{url}) if $self->{url};
   $self;
 }
 
@@ -54,6 +51,13 @@ sub search {
     }
   );
 
+  return $self;
+}
+
+sub url {
+  my $self = shift;
+  return $self->{url} ||= Mojo::URL->new('http://localhost:8983/solr') unless @_;
+  $self->{url} = Mojo::URL->new(shift);
   return $self;
 }
 

@@ -15,8 +15,13 @@ sub is_query {
   is_deeply($url->query->to_hash, \%query);
 }
 
-my $sb = SolarBeam->new(url => 'http://localhost/');
-is($sb->url, 'http://localhost/');
+my $sb = SolarBeam->new;
+isa_ok($sb->url, 'Mojo::URL');
+is $sb->url, 'http://localhost:8983/solr', 'default url';
+
+$sb->url('http://localhost/foo');
+isa_ok($sb->url, 'Mojo::URL');
+is $sb->url, 'http://localhost/foo', 'custom url';
 
 is(escape('hel*o "world'),  'hel*o "world');
 is(escape(\'hel*o "world'), 'hel\\*o \\"world');
@@ -26,7 +31,7 @@ is($sb->_build_query(['%hello = %world', hello => '*', world => \'*']), '* = \\*
 is($sb->_build_query({hello => 'world'}), '(hello:(world))');
 is($sb->_build_query({hello => ['hello', 'world']}), '(hello:(hello) OR hello:(world))');
 
-is_query($sb->_build_url(), '/select', wt => 'json');
+is_query($sb->_build_url, '/select', wt => 'json');
 
 is_query(
   $sb->_build_url({page => 5, rows => 10}), '/select',
