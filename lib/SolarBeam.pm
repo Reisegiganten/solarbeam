@@ -27,7 +27,7 @@ sub autocomplete {
     sub { $self->ua->get($url, shift->begin) },
     sub {
       my ($delay, $tx) = @_;
-      $self->$cb(SolarBeam::Response->new->parse($tx->res));
+      $self->$cb(SolarBeam::Response->new->parse($tx));
     }
   );
 
@@ -56,7 +56,7 @@ sub search {
     sub { $self->ua->post($url, form => $q, shift->begin) },
     sub {
       my ($delay, $tx) = @_;
-      my $res = SolarBeam::Response->new->parse($tx->res);
+      my $res = SolarBeam::Response->new->parse($tx);
 
       if ($page && $res->ok) {
         $res->pager->current_page($page);

@@ -1,67 +1,67 @@
 package SolarBeam::Response;
 use Mojo::Base -base;
+
 use Data::Page;
+use Mojo::JSON 'decode_json';
 use Mojo::JSON::MaybeXS;
-use Mojo::JSON qw/decode_json/;
+use Mojo::Util 'decamelize';
 
-has 'status';
-has 'error' => 'Unknown error';
-has 'QTime';
-has 'params';
+use constant DEBUG => $ENV{SOLARBEAM_DEBUG} || 0;
 
-has 'numFound';
-has 'start';
-has 'docs' => sub { [] };
-
-has 'facet_queries' => sub { {} };
-has 'facet_fields'  => sub { {} };
-has 'facet_dates'   => sub { {} };
-has 'facet_ranges'  => sub { {} };
-
-has 'terms';
-
-has 'pager' => sub { Data::Page->new };
+has docs => sub { +[] };
+has error         => undef;
+has facet_dates   => sub { +{} };
+has facet_fields  => sub { +{} };
+has facet_queries => sub { +{} };
+has facet_ranges  => sub { +{} };
+has num_found     => 0;
+has pager         => sub { Data::Page->new };
+has params        => sub { +{} };
+has query_time    => 0;
+has start         => 0;
+has terms         => sub { +{} };
 
 sub parse {
-  my ($self, $msg) = @_;
+  my ($self, $tx) = @_;
+  my $res = $tx->res;
 
-  if ($msg->error) {
-    $self->status(1);
-    $self->error($msg->error);
+  if ($tx->error) {
+    $self->error($res->error);
     return $self;
   }
 
-  my $data = decode_json($msg->body);
+  my $data = decode_json($res->body);
 
-  my $header = $data->{responseHeader};
-  my $res    = $data->{response};
-  my $facets = $data->{facet_counts};
-  my $terms  = $data->{terms};
+  my $header   = $data->{responseHeader};
+  my $response = $data->{response};
+  my $facets   = $data->{facet_counts};
+  my $terms    = $data->{terms};
   my $field;
 
   if (!$header) {
-    $self->status(1);
-    my $dom = $msg->dom;
+    my $dom = $res->dom;
     my $title = $dom->at('title') if $dom;
 
     if ($title) {
-      $self->error($title->text);
+      $self->error({message => $title->text});
     }
     else {
-      $self->error($msg->code . ': ' . $msg->body);
+      $self->error({code => $res->code, message => $res->body});
     }
     return $self;
   }
 
-  for $field (keys %{$header}) {
-    $self->$field($header->{$field}) if $self->can($field);
+  for $field (keys %$header) {
+    my $method = decamelize ucfirst $field;
+    $self->$method($header->{$field}) if $self->can($method);
   }
 
-  for $field (keys %{$res}) {
-    $self->$field($res->{$field}) if $self->can($field);
+  for $field (keys %$response) {
+    my $method = decamelize ucfirst $field;
+    $self->$method($response->{$field}) if $self->can($method);
   }
 
-  for $field (keys %{$facets}) {
+  for $field (keys %$facets) {
     $self->$field($facets->{$field}) if $self->can($field);
   }
 
@@ -81,22 +81,17 @@ sub parse {
 
   if ($terms) {
     my $sane_terms = {};
-    for $field (keys %{$terms}) {
+    for $field (keys %$terms) {
       $sane_terms->{$field} = $self->build_count_list($terms->{$field});
     }
     $self->terms($sane_terms);
   }
 
-  if ($self->ok && $res) {
-    $self->pager->total_entries($self->numFound);
+  if (!$self->error && $response) {
+    $self->pager->total_entries($self->num_found);
   }
 
   $self;
-}
-
-sub ok {
-  my $self = shift;
-  $self->status == 0;
 }
 
 sub build_count_list {

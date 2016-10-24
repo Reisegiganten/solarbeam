@@ -89,10 +89,13 @@ sub app {
     }
   );
 
-  $app->routes->get(
+  $app->routes->post(
     '/select' => sub {
       my $c = shift;
+      warn "............";
       $c->render(json => {});
     }
   );
+
+  return $app;
 }
