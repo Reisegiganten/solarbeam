@@ -48,12 +48,11 @@ sub search {
 
   $options->{-query} = $query;
   my $url = $self->_build_url($options);
-
-  my $q = $url->query;
+  my $q   = $url->query;
   $url->query(Mojo::Parameters->new);
 
   Mojo::IOLoop->delay(
-    sub { $self->ua->post($url, form => $q, shift->begin) },
+    sub { $self->ua->post($url, form => $q->to_hash, shift->begin) },
     sub {
       my ($delay, $tx) = @_;
       my $res = SolarBeam::Response->new->parse($tx);
@@ -111,7 +110,6 @@ sub _build_query {
 
 sub _build_url {
   my ($self, $options) = @_;
-
   my $endpoint = delete $options->{-endpoint};
   my $query    = delete $options->{-query};
   my $url      = $self->url->clone;
