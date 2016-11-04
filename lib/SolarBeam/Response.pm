@@ -21,6 +21,19 @@ has query_time    => 0;
 has start         => 0;
 has terms         => sub { +{} };
 
+sub facet_fields_as_hashes {
+  my $self = shift;
+
+  return $self->{facet_fields_as_hashes} ||= do {
+    my $facet_fields = $self->facet_fields;
+    my %res;
+    for my $k (keys %$facet_fields) {
+      $res{$k} = {map { @$_{qw(value count)} } @{$facet_fields->{$k} || []}};
+    }
+    return \%res;
+  };
+}
+
 sub parse {
   my ($self, $tx) = @_;
   my $res = $tx->res;
