@@ -36,20 +36,18 @@ sub facet_fields_as_hashes {
 
 sub parse {
   my ($self, $tx) = @_;
-  my $res = $tx->res;
-
-  if ($tx->error) {
-    $self->error($res->error);
-    return $self;
-  }
-
-  my $data = decode_json($res->body);
-
+  my $res      = $tx->res;
+  my $data     = $res->json || {};
   my $header   = $data->{responseHeader};
   my $response = $data->{response};
   my $facets   = $data->{facet_counts};
   my $terms    = $data->{terms};
   my $field;
+
+  if ($data->{error}) {
+    $self->error({code => $data->{error}{code} || $tx->res->code, message => $data->{error}{msg}});
+    return $self;
+  }
 
   if (!$header) {
     my $dom = $res->dom;
@@ -63,6 +61,12 @@ sub parse {
     }
     return $self;
   }
+
+  if ($tx->error) {
+    $self->error($res->error);
+    return $self;
+  }
+
 
   for $field (keys %$header) {
     my $method = decamelize ucfirst $field;
