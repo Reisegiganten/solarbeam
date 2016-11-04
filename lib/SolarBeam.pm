@@ -57,7 +57,7 @@ sub search {
       my ($delay, $tx) = @_;
       my $res = SolarBeam::Response->new->parse($tx);
 
-      if ($page && $res->ok) {
+      if ($page && !$res->error) {
         $res->pager->current_page($page);
         $res->pager->entries_per_page($options->{rows});
       }
