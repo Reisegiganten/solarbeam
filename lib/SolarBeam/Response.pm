@@ -67,7 +67,6 @@ sub parse {
     return $self;
   }
 
-
   for $field (keys %$header) {
     my $method = decamelize ucfirst $field;
     $self->$method($header->{$field}) if $self->can($method);
@@ -85,21 +84,21 @@ sub parse {
   my $ff = $self->facet_fields;
   if ($ff) {
     for $field (keys %$ff) {
-      $ff->{$field} = $self->build_count_list($ff->{$field});
+      $ff->{$field} = $self->_build_count_list($ff->{$field});
     }
   }
 
   if ($self->facet_ranges) {
     for $field (keys %{$self->facet_ranges}) {
       my $range = $self->facet_ranges->{$field};
-      $range->{counts} = $self->build_count_list($range->{counts});
+      $range->{counts} = $self->_build_count_list($range->{counts});
     }
   }
 
   if ($terms) {
     my $sane_terms = {};
     for $field (keys %$terms) {
-      $sane_terms->{$field} = $self->build_count_list($terms->{$field});
+      $sane_terms->{$field} = $self->_build_count_list($terms->{$field});
     }
     $self->terms($sane_terms);
   }
@@ -111,7 +110,7 @@ sub parse {
   $self;
 }
 
-sub build_count_list {
+sub _build_count_list {
   my ($self, $list) = @_;
   my @result = ();
   for (my $i = 1; $i < @$list; $i += 2) {
@@ -126,36 +125,127 @@ sub build_count_list {
 
 =head1 NAME
 
-SolarBeam::Response - TODO
+SolarBeam::Response - Represents a Solr search response
 
 =head1 SYNOPSIS
 
-TODO
+ use SolarBeam::Response;
+ my $tx = Mojo::UserAgent->new->post($solr_url, form => \%query);
+ my $res = SolarBeam::Response->new->parse($tx);
+
+ if ($res->error) {
+    die sprintf "%s: %s", $res->error->{code} || 0, $res->error->{message};
+ }
+
+ for my $doc (@{$res->docs}) {
+    say $doc->{surname};
+ }
 
 =head1 DESCRIPTION
 
-TODO
+L<SolarBeam::Response> holds the response from L<SolarBeam/autocomplete> or
+L<SolarBeam/search>.
 
 =head1 ATTRIBUTES
 
+=head2 docs
+
+  $array_ref = $self->docs;
+  $self = $self->docs([{}, ...]);
+
+Holds a list of the documents retrieved from Solr.
+
+=head2 error
+
+  $hash_ref = $self->error;
+  $self = $self->error({message => "Error message", code => 500});
+
+Holds either a hash-ref with error details or C<undef()> if no error is
+detected. This attribute is modeled the same way as L<Mojo::Transaction/error>,
+but can also contain detailed error messages from the Solr server.
+
+=head2 facet_dates
+
+  $hash_ref = $self->facet_dates;
+
+TODO.
+
+=head2 facet_fields
+
+  $hash_ref = $self->facet_fields;
+
+TODO.
+
+=head2 facet_queries
+
+  $hash_ref = $self->facet_queries;
+
+TODO.
+
+=head2 facet_ranges
+
+  $hash_ref = $self->facet_ranges;
+
+TODO.
+
+=head2 num_found
+
+  $int = $self->num_found;
+
+Holds the number of matching documents. This number can be higher than the
+number of elements in L</docs>.
+
+=head2 pager
+
+  $pager = $self->pager;
+  $self = $self->pager(Data::Page->new);
+
+Holds a L<Data::Page> object.
+
+=head2 params
+
+  $hash_ref = $self->params;
+
+Holds the search params sent to Solr.
+
+=head2 query_time
+
+  $int = $self->query_time;
+
+The time the search took.
+
+=head2 start
+
+  $int = $self->start;
+
+Offset of the search result.
+
+=head2 terms
+
+    $hash_ref = $self->terms;
+
+TODO
+
 =head1 METHODS
 
-=head2 build_count_list
+=head2 facet_fields_as_hashes
 
-=head2 ok
+    $hash_ref = $self->facet_fields_as_hashes;
+
+Turns the arrays in L</facet_fields> into hashes instead. Example:
+
+    $self->facet_fields = {colors => [{value => "red", count => 42}]};
+    $self->facet_fields_as_hashes = {colors => {red => 42}}
 
 =head2 parse
 
-=head1 AUTHOR
+    $self = $self->parse(Mojo::Transaction->new);
 
-Jan Henning Thorsen
-
-=head1 COPYRIGHT AND LICENSE
-
-TODO
+Used to parse the result from a query. Will populate the different
+L</ATTRIBUTES>.
 
 =head1 SEE ALSO
 
-TODO
+L<SolarBeam>.
 
 =cut

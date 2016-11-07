@@ -75,8 +75,6 @@ B<NB:> Values sent to L<SolarBeam::Query/new> are automatically escaped for you.
 
 Unescapes values escaped in L</escape_chars>.
 
-=cut
-
 =head1 SEE ALSO
 
 L<SolarBeam>.

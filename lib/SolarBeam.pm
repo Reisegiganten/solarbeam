@@ -86,7 +86,7 @@ sub _build_hash {
     push @query, join(' OR ', map { $field . ':(' . escape($_) . ')' } @vals);
   }
 
-  '(' . join(' AND ', @query) . ')';
+  return '(' . join(' AND ', @query) . ')';
 }
 
 sub _build_query {
@@ -233,23 +233,92 @@ A hashref with default parameters used for every query.
 
 =head2 new
 
-  $self = SolarBeam->new;
+  $self = SolarBeam->new(%attributes);
 
 Object constructor.
 
-=head2 search($query, [%options], $cb)
+=head2 search
 
-options:
+  $self = $self->search($query, [%options], sub { my ($self, $res) = @_; });
 
-    page
-    rows
+Used to search for data in Solr. C<$res> is a L<SolarBeam::Response> object.
 
-=head2 autocomplete($prefix, [%options], $cb)
+Example C<$query>:
 
-options:
+=over 2
 
-   -postfix   - defaults to \w+
-   regex.flag -
-   regex      -
+=item * Hash
+
+  $self->search({surname => q("Thorsen"), age => [33, 34]});
+
+The query above will result in this Solr query:
+
+  (surname:("Thorsen") AND age:(33) OR age:(34))
+
+=item * String
+
+  $self->search("active:1");
+
+The query above will result in this Solr query:
+
+  active:1
+
+=back
+
+C<%options> can hold Solr query parameters and some special instuctions
+to this module, such a "page" and "rows".
+
+=over 2
+
+=item * page
+
+Used to calculate the offset together with L</rows>. Will also be used to set
+L<Data::Page> attributes in L<SolarBeam::Response/pager>:
+
+  $res->pager->current_page($page);
+
+=item * rows
+
+Used to calculate the offset together with L</page>. Will also be used to set
+L<Data::Page> attributes in L<SolarBeam::Response/pager>:
+
+  $res->pager->entries_per_page($rows);
+
+=back
+
+=head2 autocomplete
+
+    $self = $self->autocomplete($prefix, [%options], sub { my ($self, $res) = @_; });
+
+TODO.
+
+C<$res> is a L<SolarBeam::Response> object.
+
+C<%options> can be:
+
+=over 2
+
+=item * -postfix   - defaults to \w+
+
+=item * regex.flag -
+
+=item * regex      -
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2011-2016, Magnus Holm
+
+This program is free software, you can redistribute it and/or modify it under
+the terms of the Artistic License version 2.0.
+
+=head1 AUTHOR
+
+Magnus Holm - C<judofyr@gmail.com>
+
+Jan Henning Thorsen - C<jhthorsen@cpan.org>
+
+Nicolas Mendoza - C<mendoza@pvv.ntnu.no>
 
 =cut
