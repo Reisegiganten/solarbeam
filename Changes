@@ -1,5 +1,8 @@
 Revision history for perl distribution SolarBeam
 
+0.03 Not Released
+ - Fix handling of $tx error
+
 0.02 2016-11-07T13:12:45+0100
  - Fix JSON error handling when parsing response
  - Fix SolarBeam::search(): $ua->post() need a plain hash and not Mojo::Parameters

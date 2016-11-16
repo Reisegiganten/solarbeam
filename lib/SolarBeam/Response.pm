@@ -63,7 +63,7 @@ sub parse {
   }
 
   if ($tx->error) {
-    $self->error($res->error);
+    $self->error($tx->error);
     return $self;
   }
 
