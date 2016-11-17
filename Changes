@@ -1,6 +1,6 @@
 Revision history for perl distribution SolarBeam
 
-0.03 Not Released
+0.03 2016-11-17T09:20:47+0100
  - Fix handling of $tx error
 
 0.02 2016-11-07T13:12:45+0100

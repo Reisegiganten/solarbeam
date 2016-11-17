@@ -8,7 +8,7 @@ use SolarBeam::Query;
 use SolarBeam::Response;
 use SolarBeam::Util 'escape';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 has ua            => sub { Mojo::UserAgent->new };
 has default_query => sub { {} };
@@ -193,7 +193,7 @@ SolarBeam - Async Solr search driver
 
 =head1 VERSION
 
-0.02
+0.03
 
 =head1 SYNOPSIS
 
