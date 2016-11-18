@@ -1,23 +1,11 @@
 use strict;
 use warnings;
-
-use Test::More 'no_plan';
+use Test::More;
 
 use Mojo::JSON;
 use File::Basename;
 use Mojo::Message::Response;
 use Mojo::Transaction::HTTP;
-
-sub fixture {
-  my $name = shift;
-  my $file = dirname(__FILE__) . '/fixtures/' . $name . '.json';
-  open(FILE, $file) or die 'Could not open ' . $file;
-  my $content = <FILE>;
-  close(FILE);
-  my $tx = Mojo::Transaction::HTTP->new;
-  $tx->res(Mojo::Message::Response->new(code => 200)->body($content));
-  return $tx;
-}
 
 use_ok 'SolarBeam::Response';
 
@@ -60,3 +48,43 @@ ok($res->error);
 $res = SolarBeam::Response->new->parse(fixture('unknown'));
 ok(!$res->error);
 
+my $tx = Mojo::Transaction::HTTP->new;
+$tx->req->error({});
+is_deeply parse()->error, {message => 'Unknown error'}, 'empty response';
+
+$tx->req->error({message => 'oops!'});
+is_deeply parse()->error, {message => 'oops!'}, 'request error';
+
+$tx->req->error(undef);
+$tx->res->error({code => 500, message => 'Internal server error'});
+is_deeply parse()->error, {code => 500, message => 'Internal server error'}, 'response error';
+
+$tx->res->error(undef);
+$tx->res->code(401);
+is_deeply parse()->error, {code => 401, message => 'Missing response headers.'},
+  'missing response headers';
+
+$tx->res->code(403);
+$tx->res->body('{"error":{"code":42,"msg":"yikes"}}');
+is_deeply parse()->error, {code => 42, message => 'yikes'}, 'solr json error';
+
+delete $tx->res->{json};
+$tx->res->body('<title>xml?</title>');
+is_deeply parse()->error, {code => 403, message => '<title>xml?</title>'}, 'fallback error';
+
+done_testing;
+
+sub fixture {
+  my $name = shift;
+  my $file = dirname(__FILE__) . '/fixtures/' . $name . '.json';
+  open(FILE, $file) or die 'Could not open ' . $file;
+  my $content = <FILE>;
+  close(FILE);
+  my $tx = Mojo::Transaction::HTTP->new;
+  $tx->res(Mojo::Message::Response->new(code => 200)->body($content));
+  return $tx;
+}
+
+sub parse {
+  return SolarBeam::Response->new->parse($tx);
+}

@@ -1,5 +1,8 @@
 Revision history for perl distribution SolarBeam
 
+0.04 Not Released
+ - Improved error handling in SolarBeam::Respons
+
 0.03 2016-11-17T09:20:47+0100
  - Fix handling of $tx error
 

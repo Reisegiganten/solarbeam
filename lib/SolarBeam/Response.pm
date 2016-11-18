@@ -49,20 +49,20 @@ sub parse {
     return $self;
   }
 
-  if (!$header) {
+  if ($res->code and !$header) {
     my $dom = $res->dom;
-    my $title = $dom->at('title') if $dom;
 
-    if ($title) {
-      $self->error({message => $title->text});
+    if ($dom and $dom->at('title')) {
+      $self->error({code => $res->code, message => $dom->at('title')->text});
     }
     else {
-      $self->error({code => $res->code, message => $res->body});
+      $self->error({code => $res->code, message => $res->body || 'Missing response headers.'});
     }
     return $self;
   }
 
   if ($tx->error) {
+    $tx->error->{message} ||= 'Unknown error';
     $self->error($tx->error);
     return $self;
   }
