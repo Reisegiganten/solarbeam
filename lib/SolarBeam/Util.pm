@@ -5,9 +5,9 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(escape escape_chars unescape_chars);
 
-my $escape_all   = quotemeta('+-&|!(){}[]^~:\\"*?');
-my $escape_chars = quotemeta('+-&|!(){}[]^"~*?:\\');
-my $escape_wilds = quotemeta('+-&|!(){}[]^~:\\');
+my $all   = quotemeta('+-&|!(){}[]^~:\\"*?');
+my $chars = quotemeta('+-&|!(){}[]^"~*?:\\');
+my $wilds = quotemeta('+-&|!(){}[]^~:\\');
 
 sub escape {
   my $s = shift;
@@ -15,10 +15,10 @@ sub escape {
 
   if (ref $s) {
     $s = $$s;
-    $s =~ s{([$escape_all])}{\\$1}g;
+    $s =~ s{([$all])}{\\$1}g;
   }
   else {
-    $s =~ s{([$escape_wilds])}{\\$1}g;
+    $s =~ s{([$wilds])}{\\$1}g;
   }
 
   return $s;
@@ -26,13 +26,13 @@ sub escape {
 
 sub escape_chars {
   my $s = shift;
-  $s =~ s{([$escape_chars])}{\\$1}g;
+  $s =~ s{([$chars])}{\\$1}g;
   $s;
 }
 
 sub unescape_chars {
   my $s = shift;
-  $s =~ s{\\([$escape_chars])}{$1}g;
+  $s =~ s{\\([$chars])}{$1}g;
   $s;
 }
 
