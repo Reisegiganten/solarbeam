@@ -1,6 +1,6 @@
 Revision history for perl distribution SolarBeam
 
-0.04 Not Released
+0.04 2016-11-18T14:38:32+0100
  - Improved error handling in SolarBeam::Respons
 
 0.03 2016-11-17T09:20:47+0100
